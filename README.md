@@ -18,11 +18,12 @@
 3. Navigate to the `themes` section and paste the contents of the corresponding theme file (e.g. `rose-pine.theme.json`).
 4. Update `colorScheme` within the `profiles` section to include your chosen scheme:
 
-    ```json
+    ```jsonc
     {
         "profiles": {
             "defaults": {
                 "colorScheme": "rose-pine"
+                // "colorScheme": { "dark": "rose-pine", "light": "rose-pine-dawn"}
             }
         }
     }
@@ -30,9 +31,10 @@
 
 5. Update `theme` to use your chosen theme:
 
-    ```json
+    ```jsonc
     {
         "theme": "rose-pine"
+        // "theme": { "dark": "rose-pine", "light": "rose-pine-dawn"}
     }
     ```
 
