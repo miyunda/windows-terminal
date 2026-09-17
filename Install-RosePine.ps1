@@ -405,7 +405,7 @@ try {
     try {
         $encoding = [System.Text.UTF8Encoding]::new($false)
         [System.IO.File]::WriteAllText($temporary, $document, $encoding)
-        [System.IO.File]::Replace($temporary, $settingsFile, $null)
+        [System.IO.File]::Replace($temporary, $settingsFile, $backup, $true)
     }
     finally {
         if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }

@@ -60,6 +60,8 @@ try {
     Assert-That ($updated.Contains('"light": "rose-pine-moon"')) 'The light theme selection was not updated.'
     $firstBackupCount = @(Get-ChildItem -Path "$commentedPath.rose-pine-backup-*.json").Count
     Assert-That ($firstBackupCount -eq 1) 'The first update did not create exactly one backup.'
+    $firstBackup = @(Get-ChildItem -Path "$commentedPath.rose-pine-backup-*.json")[0]
+    Assert-That ((Get-Content -LiteralPath $firstBackup.FullName -Raw) -eq $commentedSettings) 'The backup does not match the original settings.'
 
     $secondRun = Invoke-Installer $commentedPath 'Moon'
     Assert-That ($secondRun.ExitCode -eq 0) "Repeated install failed: $($secondRun.Output)"
