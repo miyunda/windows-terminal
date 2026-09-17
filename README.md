@@ -16,7 +16,8 @@
 ### One-click installer
 
 On Windows, double-click `Install-RosePine.cmd` to install automatic appearance
-pairing: dark mode uses Rosé Pine and light mode uses Rosé Pine Dawn. It locates Windows Terminal's normal packaged or unpackaged
+pairing: Windows Terminal switches between Rosé Pine in dark mode and Rosé Pine
+Dawn in light mode as its appearance changes. It locates Windows Terminal's normal packaged or unpackaged
 `settings.json`, backs it up, adds the repository's matching scheme and theme,
 and selects it for `profiles.defaults.colorScheme` and the root `theme`.
 
