@@ -13,6 +13,38 @@
 
 ## Usage
 
+### One-click installer
+
+On Windows, double-click `Install-RosePine.cmd` to install the default Rosé Pine
+variant. It locates Windows Terminal's normal packaged or unpackaged
+`settings.json`, backs it up, adds the repository's matching scheme and theme,
+and selects it for `profiles.defaults.colorScheme` and the root `theme`.
+
+To select a different variant or settings file, run PowerShell from this
+repository:
+
+```powershell
+.\Install-RosePine.ps1 -Variant Moon
+.\Install-RosePine.ps1 -Variant Dawn -SettingsPath 'C:\path\to\settings.json'
+```
+
+The installer accepts JSONC settings (comments and trailing commas), preserves
+unrelated settings, and can be run repeatedly without adding duplicate scheme
+or theme entries. Backups are created alongside `settings.json` as
+`settings.json.rose-pine-backup-<timestamp>.json` only when a change is needed.
+
+If an existing `colorScheme` or `theme` uses a dark/light object, the installer
+updates those two references while leaving other properties in the object
+intact.
+
+On Windows, run the included validation cases with:
+
+```powershell
+.\tests\Validate-Installer.ps1
+```
+
+### Manual installation
+
 1. Open `settings.json` from Windows Terminal
 2. In the `schemes` section of the file, paste the contents of your chosen scheme file (e.g. `rose-pine.scheme.json`)
 3. Navigate to the `themes` section and paste the contents of the corresponding theme file (e.g. `rose-pine.theme.json`).
