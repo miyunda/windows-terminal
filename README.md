@@ -15,8 +15,8 @@
 
 ### One-click installer
 
-On Windows, double-click `Install-RosePine.cmd` to install the default Rosé Pine
-variant. It locates Windows Terminal's normal packaged or unpackaged
+On Windows, double-click `Install-RosePine.cmd` to install automatic appearance
+pairing: dark mode uses Rosé Pine and light mode uses Rosé Pine Dawn. It locates Windows Terminal's normal packaged or unpackaged
 `settings.json`, backs it up, adds the repository's matching scheme and theme,
 and selects it for `profiles.defaults.colorScheme` and the root `theme`.
 
@@ -27,6 +27,9 @@ repository:
 .\Install-RosePine.ps1 -Variant Moon
 .\Install-RosePine.ps1 -Variant Dawn -SettingsPath 'C:\path\to\settings.json'
 ```
+
+Use `-Variant Auto` for the default dark Rosé Pine/light Dawn pairing. An
+explicit variant uses that same variant in both light and dark modes.
 
 The installer accepts JSONC settings (comments and trailing commas), preserves
 unrelated settings, and can be run repeatedly without adding duplicate scheme

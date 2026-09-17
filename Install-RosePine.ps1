@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('RosePine', 'Moon', 'Dawn')]
-    [string]$Variant = 'RosePine',
+    [ValidateSet('Auto', 'RosePine', 'Moon', 'Dawn')]
+    [string]$Variant = 'Auto',
 
     [string]$SettingsPath
 )
@@ -13,6 +13,13 @@ $variantDetails = @{
     RosePine = @{ Name = 'rose-pine'; Scheme = 'rose-pine.scheme.json'; Theme = 'rose-pine.theme.json' }
     Moon = @{ Name = 'rose-pine-moon'; Scheme = 'rose-pine-moon.scheme.json'; Theme = 'rose-pine-moon.theme.json' }
     Dawn = @{ Name = 'rose-pine-dawn'; Scheme = 'rose-pine-dawn.scheme.json'; Theme = 'rose-pine-dawn.theme.json' }
+}
+
+$installPlans = @{
+    Auto = @{ Variants = @('RosePine', 'Dawn'); Dark = 'rose-pine'; Light = 'rose-pine-dawn' }
+    RosePine = @{ Variants = @('RosePine'); Dark = 'rose-pine'; Light = 'rose-pine' }
+    Moon = @{ Variants = @('Moon'); Dark = 'rose-pine-moon'; Light = 'rose-pine-moon' }
+    Dawn = @{ Variants = @('Dawn'); Dark = 'rose-pine-dawn'; Light = 'rose-pine-dawn' }
 }
 
 function Fail([string]$Message) {
@@ -253,15 +260,25 @@ function Set-StringProperty([string]$Text, [int]$ObjectStart, [string]$Name, [st
     return $Text.Remove($property.ValueStart, $property.ValueEnd - $property.ValueStart).Insert($property.ValueStart, $encoded)
 }
 
-function Set-ThemeSelection([string]$Text, [int]$ObjectStart, [string]$Name, [string]$Selection) {
+function Set-ThemeSelection([string]$Text, [int]$ObjectStart, [string]$Name, [string]$DarkSelection, [string]$LightSelection) {
     $layout = Get-ObjectLayout $Text $ObjectStart
     $property = Find-ObjectProperty $layout $Name
-    if ($null -eq $property -or $Text[$property.ValueStart] -eq '"') {
-        return Set-StringProperty $Text $ObjectStart $Name $Selection
+    if ($null -eq $property) {
+        if ($DarkSelection -eq $LightSelection) { return Set-StringProperty $Text $ObjectStart $Name $DarkSelection }
+        $Text = Add-ObjectProperty $Text $ObjectStart $Name '{}'
+        $layout = Get-ObjectLayout $Text $ObjectStart
+        $property = Find-ObjectProperty $layout $Name
+    }
+    if ($Text[$property.ValueStart] -eq '"') {
+        if ($DarkSelection -eq $LightSelection) { return Set-StringProperty $Text $ObjectStart $Name $DarkSelection }
+        $darkEncoded = $DarkSelection | ConvertTo-Json -Compress
+        $lightEncoded = $LightSelection | ConvertTo-Json -Compress
+        $value = "{ `"dark`": $darkEncoded, `"light`": $lightEncoded }"
+        return $Text.Remove($property.ValueStart, $property.ValueEnd - $property.ValueStart).Insert($property.ValueStart, $value)
     }
     if ($Text[$property.ValueStart] -ne '{') { Fail "'$Name' must be a string or a dark/light object." }
-    $Text = Set-StringProperty $Text $property.ValueStart 'dark' $Selection
-    return Set-StringProperty $Text $property.ValueStart 'light' $Selection
+    $Text = Set-StringProperty $Text $property.ValueStart 'dark' $DarkSelection
+    return Set-StringProperty $Text $property.ValueStart 'light' $LightSelection
 }
 
 function Ensure-ProfileDefaults([string]$Text) {
@@ -363,28 +380,29 @@ function Get-WindowsTerminalSettingsPath([string]$RequestedPath) {
 }
 
 try {
-    $details = $variantDetails[$Variant]
+    $plan = $installPlans[$Variant]
     $settingsFile = Get-WindowsTerminalSettingsPath $SettingsPath
-    $schemeFile = Join-Path $PSScriptRoot $details.Scheme
-    $themeFile = Join-Path $PSScriptRoot $details.Theme
-    foreach ($asset in @($schemeFile, $themeFile)) {
-        if (-not (Test-Path -LiteralPath $asset -PathType Leaf)) { Fail "Required repository asset is missing: $asset" }
-    }
-
-    $scheme = Get-Content -LiteralPath $schemeFile -Raw -Encoding UTF8
-    $theme = Get-Content -LiteralPath $themeFile -Raw -Encoding UTF8
-    Test-Jsonc $scheme $schemeFile
-    Test-Jsonc $theme $themeFile
-
     $document = Get-Content -LiteralPath $settingsFile -Raw -Encoding UTF8
     Test-Jsonc $document $settingsFile
     $rootStart = Get-RootObjectStart $document
 
-    $document = Add-ObjectToNamedArray $document 'schemes' $details.Name $scheme
-    $document = Add-ObjectToNamedArray $document 'themes' $details.Name $theme
+    foreach ($variantName in $plan.Variants) {
+        $details = $variantDetails[$variantName]
+        $schemeFile = Join-Path $PSScriptRoot $details.Scheme
+        $themeFile = Join-Path $PSScriptRoot $details.Theme
+        foreach ($asset in @($schemeFile, $themeFile)) {
+            if (-not (Test-Path -LiteralPath $asset -PathType Leaf)) { Fail "Required repository asset is missing: $asset" }
+        }
+        $scheme = Get-Content -LiteralPath $schemeFile -Raw -Encoding UTF8
+        $theme = Get-Content -LiteralPath $themeFile -Raw -Encoding UTF8
+        Test-Jsonc $scheme $schemeFile
+        Test-Jsonc $theme $themeFile
+        $document = Add-ObjectToNamedArray $document 'schemes' $details.Name $scheme
+        $document = Add-ObjectToNamedArray $document 'themes' $details.Name $theme
+    }
     $defaults = Ensure-ProfileDefaults $document
-    $document = Set-ThemeSelection $defaults.Text $defaults.DefaultsStart 'colorScheme' $details.Name
-    $document = Set-ThemeSelection $document $rootStart 'theme' $details.Name
+    $document = Set-ThemeSelection $defaults.Text $defaults.DefaultsStart 'colorScheme' $plan.Dark $plan.Light
+    $document = Set-ThemeSelection $document $rootStart 'theme' $plan.Dark $plan.Light
     Test-Jsonc $document 'The updated settings file'
 
     $original = Get-Content -LiteralPath $settingsFile -Raw -Encoding UTF8
